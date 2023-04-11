@@ -1,3 +1,5 @@
+/** @format */
+
 import * as React from 'react'
 import { useState, useEffect } from 'react'
 import {
@@ -34,7 +36,7 @@ export interface IDraggableGridProps<DataType extends IBaseItemType> {
   onDragging?: (gestureState: PanResponderGestureState) => void
   onDragRelease?: (newSortedData: DataType[]) => void
   onResetSort?: (newSortedData: DataType[]) => void
-  delayLongPress?:number
+  delayLongPress?: number
 }
 interface IMap<T> {
   [key: string]: T
@@ -52,6 +54,7 @@ interface IItem<DataType> {
   currentPosition: Animated.AnimatedValueXY
 }
 let activeBlockOffset = { x: 0, y: 0 }
+let dragStarted = false
 
 export const DraggableGrid = function<DataType extends IBaseItemType>(
   props: IDraggableGridProps<DataType>,
@@ -124,6 +127,8 @@ export const DraggableGrid = function<DataType extends IBaseItemType>(
   function onStartDrag(_: GestureResponderEvent, gestureState: PanResponderGestureState) {
     const activeItem = getActiveItem()
     if (!activeItem) return false
+    dragStarted = true
+
     props.onDragStart && props.onDragStart(activeItem.itemData)
     const { x0, y0, moveX, moveY } = gestureState
     const activeOrigin = blockPositions[orderMap[activeItem.key].order]
@@ -250,6 +255,7 @@ export const DraggableGrid = function<DataType extends IBaseItemType>(
   function setActiveBlock(itemIndex: number, item: DataType) {
     if (item.disabledDrag) return
 
+    dragStarted = false
     setPanResponderCapture(true)
     setActiveItemIndex(itemIndex)
   }
@@ -368,6 +374,11 @@ export const DraggableGrid = function<DataType extends IBaseItemType>(
       <Block
         onPress={onBlockPress.bind(null, itemIndex)}
         onLongPress={setActiveBlock.bind(null, itemIndex, item.itemData)}
+        onPressOut={() => {
+          if (!dragStarted) {
+            onHandRelease()
+          }
+        }}
         panHandlers={panResponder.panHandlers}
         style={getBlockStyle(itemIndex)}
         dragStartAnimationStyle={getDragStartAnimation(itemIndex)}
